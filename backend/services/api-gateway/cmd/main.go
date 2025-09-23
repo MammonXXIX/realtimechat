@@ -16,6 +16,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /authentication/register", authenticationRegisterHandler)
+	mux.HandleFunc("/websocket/chat", authenticationRegisterHandler)
 
 	server := &http.Server{
 		Addr:    gatewayHttpAddr,

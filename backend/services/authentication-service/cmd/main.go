@@ -6,8 +6,8 @@ import (
 	h "realtimechat/services/authentication-service/internal/infrastructure/http"
 	"realtimechat/services/authentication-service/internal/infrastructure/repository"
 	"realtimechat/services/authentication-service/internal/service"
-	"realtimechat/shared/database"
 	"realtimechat/shared/env"
+	"realtimechat/shared/helpers"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -16,9 +16,11 @@ import (
 func main() {
 	log.Printf("Starting Authentication Service On Port %v", ":8082")
 
-	database, err := database.NewPostgres(
-		env.GetString("DATABASE_URL", "postgres://root:root@authentication_service_database:5432/authentication_service_database?sslmode=disable"),
-		10, 5, 15*time.Minute,
+	database, err := helpers.NewPostgres(
+		env.GetString("DATABASE_URL", env.GetString("DATABASE_URL", "postgres://root:root@authentication-service-database:5432/authentication_service_database?sslmode=disable")),
+		10,
+		5,
+		15*time.Minute,
 	)
 	if err != nil {
 		log.Fatalf("Database Connection Error: %v", err)
