@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentication-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authentication-service
+  template:
+    metadata:
+      labels:
+        app: authentication-service
+    spec:
+      containers:
+        - name: authentication-service
+          image: realtimechat/authentication-service
+          ports:
+            - containerPort: 8082
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "125m"
+            requests:
+              memory: "128Mi"
+              cpu: "125m"
+          env:
+            - name: GATEWAY_HTTP_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: GATEWAY_HTTP_ADDR
+            - name: DATABASE_URL
+              value: postgres://root:root@authentication-service-database:5432/authentication_service_database?sslmode=disable
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentication-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8082
+      targetPort: 8082
+  selector:
+    app: authentication-service
+    
