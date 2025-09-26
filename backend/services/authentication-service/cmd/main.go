@@ -17,7 +17,7 @@ func main() {
 	log.Printf("Starting Authentication Service On Port %v", ":8082")
 
 	database, err := helpers.NewPostgres(
-		env.GetString("DATABASE_URL", env.GetString("DATABASE_URL", "postgres://root:root@authentication-service-database:5432/authentication_service_database?sslmode=disable")),
+		env.GetString("DATABASE_URL", env.GetString("DATABASE_URL", "")),
 		10,
 		5,
 		15*time.Minute,

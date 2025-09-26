@@ -2,9 +2,7 @@ load('ext://restart_process', 'docker_build_with_restart')
 
 k8s_yaml('./infra/development/k8s/app-config.yaml')
 k8s_yaml('./infra/development/k8s/api-gateway-deployment.yaml')
-
 k8s_yaml('./infra/development/k8s/authentication-service-deployment.yaml')
-k8s_yaml('./infra/development/k8s/authentication-service-database.yaml')
 
 docker_build_with_restart(
     'realtimechat/api-gateway',
@@ -42,4 +40,3 @@ docker_build_with_restart(
 )
 k8s_resource('authentication-service', port_forwards=8082, labels="services")
 
-k8s_resource('authentication-service-database', port_forwards=5432, labels="databases")

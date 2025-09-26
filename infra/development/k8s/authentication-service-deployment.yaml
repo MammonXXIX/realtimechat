@@ -31,7 +31,7 @@ spec:
                   name: app-config
                   key: GATEWAY_HTTP_ADDR
             - name: DATABASE_URL
-              value: postgres://root:root@authentication-service-database:5432/authentication_service_database?sslmode=disable
+              value: postgresql://neondb_owner:npg_tFOZH1iN7JoC@ep-wild-river-a154rapw-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ---
 apiVersion: v1
 kind: Service
