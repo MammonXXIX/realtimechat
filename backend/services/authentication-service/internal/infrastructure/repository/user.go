@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"realtimechat/services/authentication-service/internal/domain"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 const queryTimeoutDuration = 5 * time.Second
@@ -19,8 +21,8 @@ func NewUserRepository(db *sql.DB) *userRepository {
 
 func (r *userRepository) CreateUser(ctx context.Context, user *domain.UserModel) error {
 	query := `
-		INSERT INTO users (uuid, first_name, last_name, email, password, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO users (id, first_name, last_name, email, image_url, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
@@ -29,20 +31,83 @@ func (r *userRepository) CreateUser(ctx context.Context, user *domain.UserModel)
 	_, err := r.db.ExecContext(
 		ctx,
 		query,
-		user.UUID,
+		user.ID,
 		user.FirstName,
 		user.LastName,
 		user.Email,
-		user.Password,
+		user.ImageURL,
 		user.CreatedAt,
-		user.UpdatedAt,
 	)
 
 	if err != nil {
 		return err
 	}
 
-	// user.LastName = "repository"
-
 	return nil
+}
+
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*domain.UserModel, error) {
+	query := `
+		SELECT id, first_name, last_name, email, image_url, created_at FROM users WHERE email = $1
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
+	defer cancel()
+
+	var user domain.UserModel
+
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.ImageURL,
+		&user.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) GetUsersByIDs(ctx context.Context, IDs []string) ([]*domain.UserModel, error) {
+	query := `
+		SELECT id, first_name, last_name, email, image_url, created_at
+		FROM users
+		WHERE id = ANY($1)
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
+	defer cancel()
+
+	var users []*domain.UserModel
+
+	rows, err := r.db.QueryContext(ctx, query, pq.Array(IDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var u domain.UserModel
+
+		err := rows.Scan(
+			&u.ID,
+			&u.FirstName,
+			&u.LastName,
+			&u.Email,
+			&u.ImageURL,
+			&u.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, &u)
+	}
+
+	return users, nil
 }

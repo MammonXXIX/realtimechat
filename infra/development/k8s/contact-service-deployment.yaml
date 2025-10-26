@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: contact-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: contact-service
+  template:
+    metadata:
+      labels:
+        app: contact-service
+    spec:
+      containers:
+        - name: contact-service
+          image: realtimechat/contact-service
+          ports:
+            - containerPort: 8083
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "125m"
+            requests:
+              memory: "128Mi"
+              cpu: "125m"
+          env:
+            - name: DATABASE_URL
+              value: postgresql://Contact_Service:npg_02wnulKRiULf@ep-wild-river-a154rapw-pooler.ap-southeast-1.aws.neon.tech/Contact_Service_Database?sslmode=require&channel_binding=require
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: contact-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8083
+      targetPort: 8083
+  selector:
+    app: contact-service
+

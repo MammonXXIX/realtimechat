@@ -3,6 +3,7 @@ load('ext://restart_process', 'docker_build_with_restart')
 k8s_yaml('./infra/development/k8s/app-config.yaml')
 k8s_yaml('./infra/development/k8s/api-gateway-deployment.yaml')
 k8s_yaml('./infra/development/k8s/authentication-service-deployment.yaml')
+k8s_yaml('./infra/development/k8s/contact-service-deployment.yaml')
 
 docker_build_with_restart(
     'realtimechat/api-gateway',
@@ -39,4 +40,22 @@ docker_build_with_restart(
     ],
 )
 k8s_resource('authentication-service', port_forwards=8082, labels="services")
+
+docker_build_with_restart(
+    'realtimechat/contact-service',
+    '.',
+    entrypoint=['/app/build/contact-service'],
+    dockerfile='./infra/development/docker/contact-service.Dockerfile',
+    only=[
+        './backend/services/contact-service',
+        './backend/shared',
+        './backend/go.mod',
+        './backend/go.sum',
+    ],
+    live_update=[
+        sync('./backend/services/contact-service', '/app/services/contact-service'),
+        sync('./backend/shared', '/app/shared'),
+    ],
+)
+k8s_resource('contact-service', port_forwards=8083, labels="services")
 

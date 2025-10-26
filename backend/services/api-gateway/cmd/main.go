@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"realtimechat/shared/env"
+	"time"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 var (
@@ -18,28 +20,24 @@ func main() {
 	log.Printf("Starting API Gateway On Port %v", gatewayHttpAddr)
 	clerk.SetKey("sk_test_2aIqFAIVbY1LnrSrgv0TE3cT5I45TPQ83mlAkEG8a5")
 
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 
-	mux.HandleFunc("POST /authentication/register", authenticationRegisterHandler)
-	mux.HandleFunc("/websocket/chat", authenticationRegisterHandler)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(60 * time.Second))
 
-	mux.Handle(
-		"/test",
-		clerkhttp.WithHeaderAuthorization()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			claims, ok := clerk.SessionClaimsFromContext(r.Context())
-			if !ok {
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte(`{"access": "unauthorized"}`))
-				return
-			}
+	r.Group(func(r chi.Router) {
+		r.Use(clerkhttp.WithHeaderAuthorization())
 
-			fmt.Fprintf(w, "✅ Token valid! user_id = %s", claims.Subject)
-		})),
-	)
+		r.Post("/contacts", CreateContactByEmailHandler)
+		r.Get("/contacts", GetContactsByUserIDHandler)
+	})
 
 	server := &http.Server{
 		Addr:    gatewayHttpAddr,
-		Handler: mux,
+		Handler: r,
 	}
 
 	if err := server.ListenAndServe(); err != nil {

@@ -25,13 +25,8 @@ spec:
               memory: "128Mi"
               cpu: "125m"
           env:
-            - name: GATEWAY_HTTP_ADDR
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: GATEWAY_HTTP_ADDR
             - name: DATABASE_URL
-              value: postgresql://neondb_owner:npg_tFOZH1iN7JoC@ep-wild-river-a154rapw-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+              value: postgresql://User_Service:npg_iHUbkJ1sDB6L@ep-wild-river-a154rapw-pooler.ap-southeast-1.aws.neon.tech/User_Service_Database?sslmode=require&channel_binding=require
 ---
 apiVersion: v1
 kind: Service
@@ -44,4 +39,4 @@ spec:
       targetPort: 8082
   selector:
     app: authentication-service
-    
+

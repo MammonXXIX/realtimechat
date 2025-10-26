@@ -5,45 +5,141 @@ import (
 	"encoding/json"
 	"net/http"
 	"realtimechat/shared/utils"
+
+	"github.com/clerk/clerk-sdk-go/v2"
 )
 
-type RegisterRequest struct {
-	FirstName string `json:"first_name" validate:"required,min=2"`
-	LastName  string `json:"last_name" validate:"required,min=2"`
+type CreateContactByEmailRequest struct {
 	Email     string `json:"email" validate:"required,email"`
-	Password  string `json:"password" validate:"required,min=8"`
+	AliasName string `json:"alias_name" validate:"required"`
 }
 
-func authenticationRegisterHandler(w http.ResponseWriter, r *http.Request) {
-	var req RegisterRequest
+func CreateContactByEmailHandler(w http.ResponseWriter, r *http.Request) {
+	claims, ok := clerk.SessionClaimsFromContext(r.Context())
+	if !ok {
+		utils.WriteJSON(w, http.StatusUnauthorized, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "UNAUTHORIZED",
+				Message: "Unauthorized Request",
+			},
+		})
+		return
+	}
+
+	var req CreateContactByEmailRequest
 	if err := utils.ReadJSON(w, r, &req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.WriteJSON(w, http.StatusBadRequest, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "BAD_REQUEST",
+				Message: "Invalid Input Data",
+			},
+		})
 		return
 	}
 
 	if err := utils.Validate.Struct(req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.WriteJSON(w, http.StatusBadRequest, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "BAD_REQUEST",
+				Message: err.Error(),
+			},
+		})
 		return
 	}
 
-	jsonBody, err := json.Marshal(req)
+	requestBody, err := json.Marshal(req)
 	if err != nil {
-		http.Error(w, "Failed To Marshal Request", http.StatusInternalServerError)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "INTERNAL_SERVER_ERROR",
+				Message: "Unexpected Server Error",
+			},
+		})
 		return
 	}
 
-	res, err := http.Post("http://authentication-service:8082/register", "application/json", bytes.NewReader(jsonBody))
-	if err != nil || res.StatusCode != http.StatusCreated {
-		http.Error(w, "Failed To Register User", http.StatusInternalServerError)
+	request, _ := http.NewRequestWithContext(r.Context(), "POST", "http://contact-service:8083/", bytes.NewReader(requestBody))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-User-ID", claims.Subject)
+
+	client := &http.Client{}
+	res, err := client.Do(request)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "INTERNAL_SERVER_ERROR",
+				Message: "Unexpected Server Error",
+			},
+		})
+		return
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == 409 {
+		var resBody utils.APIResponse
+		if err := utils.DecodeJSON(res.Body, &resBody); err != nil {
+			utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
+				Error: &utils.APIError{
+					Code:    "INTERNAL_SERVER_ERROR",
+					Message: "Unexpected Server Error",
+				},
+			})
+		}
+
+		utils.WriteJSON(w, http.StatusConflict, resBody)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func GetContactsByUserIDHandler(w http.ResponseWriter, r *http.Request) {
+	claims, ok := clerk.SessionClaimsFromContext(r.Context())
+	if !ok {
+		utils.WriteJSON(w, http.StatusUnauthorized, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "UNAUTHORIZED",
+				Message: "Unauthorized Request",
+			},
+		})
+		return
+	}
+
+	request, _ := http.NewRequestWithContext(r.Context(), "GET", "http://contact-service:8083/", nil)
+	request.Header.Set("X-User-ID", claims.Subject)
+
+	client := &http.Client{}
+	res, err := client.Do(request)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "INTERNAL_SERVER_ERROR",
+				Message: "Unexpected Server Error",
+			},
+		})
 		return
 	}
 	defer res.Body.Close()
 
 	var resBody any
 	if err := utils.DecodeJSON(res.Body, &resBody); err != nil {
-		http.Error(w, "Failed To Read Response", http.StatusInternalServerError)
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "INTERNAL_SERVER_ERROR",
+				Message: "Unexpected Server Error",
+			},
+		})
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusCreated, utils.APIResponse{Data: resBody})
+	if err := utils.WriteJSON(w, http.StatusOK, resBody); err != nil {
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "INTERNAL_SERVER_ERROR",
+				Message: "Unexpected Server Error",
+			},
+		})
+		return
+	}
 }
