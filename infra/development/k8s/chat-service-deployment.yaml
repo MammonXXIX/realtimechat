@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chat-service
+  template:
+    metadata:
+      labels:
+        app: chat-service
+    spec:
+      containers:
+        - name: chat-service
+          image: realtimechat/chat-service
+          ports:
+            - containerPort: 8084
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "125m"
+            requests:
+              memory: "128Mi"
+              cpu: "125m"
+          env:
+            - name: DATABASE_URL
+              value: postgresql://Chat_Service:npg_mo7clJZus0xL@ep-wild-river-a154rapw-pooler.ap-southeast-1.aws.neon.tech/Chat_Service_Database?sslmode=require&channel_binding=require
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8084
+      targetPort: 8084
+  selector:
+    app: chat-service
+

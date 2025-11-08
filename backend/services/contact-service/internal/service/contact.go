@@ -31,13 +31,14 @@ func (s *contactService) CreateContactByEmail(ctx context.Context, adderID, emai
 	}
 	defer res.Body.Close()
 
+	switch res.StatusCode {
+	case 404:
+		return utils.ErrNotFound
+	}
+
 	var resBody dto.AuthenticationData
 	if err := utils.DecodeJSON(res.Body, &resBody); err != nil {
 		return err
-	}
-
-	if resBody.Email == "" {
-		return utils.ErrNotFound
 	}
 
 	contact := &domain.ContactModel{

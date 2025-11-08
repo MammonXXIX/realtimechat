@@ -10,6 +10,7 @@ import (
 	clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 var (
@@ -22,6 +23,15 @@ func main() {
 
 	r := chi.NewRouter()
 
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
+
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
@@ -33,6 +43,13 @@ func main() {
 
 		r.Post("/contacts", CreateContactByEmailHandler)
 		r.Get("/contacts", GetContactsByUserIDHandler)
+
+		r.Route("/chat", func(r chi.Router) {
+			r.Post("/", CreatePrivateChatHandler)
+			r.Post("/{chatRoomID}/message", CreateMessageHandler)
+			r.Get("/{chatRoomID}/history", GetChatHistoryByChatRoomID)
+			r.Get("/history", GetChatHistoriesByUserIDHandler)
+		})
 	})
 
 	server := &http.Server{

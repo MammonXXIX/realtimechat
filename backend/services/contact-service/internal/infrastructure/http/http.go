@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"realtimechat/services/contact-service/internal/domain"
 	"realtimechat/shared/utils"
@@ -49,6 +48,13 @@ func (h *HttpHandler) CreateContactByEmail(w http.ResponseWriter, r *http.Reques
 					Message: "Contact Already Exists",
 				},
 			})
+		case errors.Is(err, utils.ErrNotFound):
+			utils.WriteJSON(w, http.StatusNotFound, utils.APIResponse{
+				Error: &utils.APIError{
+					Code:    "NOT_FOUND",
+					Message: "The Email You Added Does Not Exist",
+				},
+			})
 		default:
 			utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
 				Error: &utils.APIError{
@@ -82,7 +88,7 @@ func (h *HttpHandler) GetContactsByUserID(w http.ResponseWriter, r *http.Request
 			utils.WriteJSON(w, http.StatusNotFound, utils.APIResponse{
 				Error: &utils.APIError{
 					Code:    "NOT_FOUND",
-					Message: "User With This Email Not Found",
+					Message: "No Contact Have Been Added Yet",
 				},
 			})
 		default:
@@ -95,8 +101,6 @@ func (h *HttpHandler) GetContactsByUserID(w http.ResponseWriter, r *http.Request
 		}
 		return
 	}
-
-	log.Println(contacts)
 
 	if err := utils.WriteJSON(w, http.StatusOK, utils.APIResponse{Data: contacts}); err != nil {
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
