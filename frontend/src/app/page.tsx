@@ -12,7 +12,7 @@ export default function ChatHistoryPage() {
       const token = await getToken()
 
       const res = await fetch(
-        "http://localhost:8081/chat/d89cab7c-f9ed-4f5a-a0b5-6aa5b18b001d/history",
+        "http://localhost:8081/chat/history",
         {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -22,7 +22,7 @@ func NewContactService(repository domain.ContactRepository) *contactService {
 }
 
 func (s *contactService) CreateContactByEmail(ctx context.Context, adderID, email, aliasName string) error {
-	request, _ := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("http://authentication-service:8082/user/%s", email), nil)
+	request, _ := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("http://authentication-service:8082/%s", email), nil)
 
 	client := &http.Client{}
 	res, err := client.Do(request)
@@ -78,7 +78,7 @@ func (s *contactService) GetContactsByUserID(ctx context.Context, ID string) ([]
 		return nil, err
 	}
 
-	request, _ := http.NewRequestWithContext(ctx, "POST", "http://authentication-service:8082/users/bulk", bytes.NewReader(requestBody))
+	request, _ := http.NewRequestWithContext(ctx, "POST", "http://authentication-service:8082/bulk", bytes.NewReader(requestBody))
 	request.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}

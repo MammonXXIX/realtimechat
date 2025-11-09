@@ -16,12 +16,14 @@ type UserModel struct {
 
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *UserModel) error
+	GetUserByID(ctx context.Context, ID string) (*UserModel, error)
 	GetUserByEmail(ctx context.Context, email string) (*UserModel, error)
 	GetUsersByIDs(ctx context.Context, IDs []string) ([]*UserModel, error)
 }
 
 type UserService interface {
 	CreateAccountByClerk(ctx context.Context, data any) error
+	GetUserByID(ctx context.Context, ID string) (*UserModel, error)
 	GetUserByEmail(ctx context.Context, email string) (*UserModel, error)
 	GetUsersByIDs(ctx context.Context, IDs []string) ([]*UserModel, error)
 }

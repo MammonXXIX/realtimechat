@@ -44,8 +44,8 @@ func main() {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Post("/webhook/clerk", clerkHandler.ClerkEventHandler)
-	r.Post("/users/bulk", httpHandler.GetUsersByIDs)
-	r.Get("/user/{email}", httpHandler.GetUserByEmail)
+	r.Post("/bulk", httpHandler.GetUsersByIDs)
+	r.Get("/{email}", httpHandler.GetUserByEmail)
 
 	server := &http.Server{
 		Addr:    ":8082",

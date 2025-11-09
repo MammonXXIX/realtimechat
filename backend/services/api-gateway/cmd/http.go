@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"realtimechat/shared/utils"
 
@@ -358,7 +357,6 @@ func GetChatHistoryByChatRoomID(w http.ResponseWriter, r *http.Request) {
 
 	var resBody any
 	if err := utils.DecodeJSON(res.Body, &resBody); err != nil {
-		log.Println(err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
 			Error: &utils.APIError{
 				Code:    "INTERNAL_SERVER_ERROR",
@@ -418,7 +416,7 @@ func GetChatHistoriesByUserIDHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := utils.WriteJSON(w, http.StatusOK, resBody); err != nil {
+	if err := utils.WriteJSON(w, http.StatusOK, utils.APIResponse{Data: resBody}); err != nil {
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
 			Error: &utils.APIError{
 				Code:    "INTERNAL_SERVER_ERROR",

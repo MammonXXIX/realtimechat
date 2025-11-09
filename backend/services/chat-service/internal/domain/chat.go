@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"realtimechat/shared/dto"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,7 +32,7 @@ type MessageModel struct {
 
 type ChatHistoryModel struct {
 	ChatRoomID   uuid.UUID `json:"chat_room_id"`
-	ChatRoomName uuid.UUID `json:"chat_room_name"`
+	ChatRoomName string    `json:"chat_room_name"`
 	OtherUserID  string    `json:"other_user_id"`
 	Message      string    `json:"message"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -49,5 +50,5 @@ type ChatService interface {
 	CreatePrivateChat(ctx context.Context, userA, userB string) error
 	CreateMessage(ctx context.Context, chatRoomID uuid.UUID, senderID, message string) error
 	GetChatHistoryByChatRoomID(ctx context.Context, chatRoomID uuid.UUID) ([]*MessageModel, error)
-	GetChatHistoriesByUserID(ctx context.Context, userID string) ([]*ChatHistoryModel, error)
+	GetChatHistoriesByUserID(ctx context.Context, userID string) ([]*dto.ChatHistoryWithOtherUserData, error)
 }

@@ -46,6 +46,32 @@ func (r *userRepository) CreateUser(ctx context.Context, user *domain.UserModel)
 	return nil
 }
 
+func (r *userRepository) GetUserByID(ctx context.Context, ID string) (*domain.UserModel, error) {
+	query := `
+		SELECT id, first_name, last_name, email, image_url, created_at FROM users WHERE id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
+	defer cancel()
+
+	var user domain.UserModel
+
+	err := r.db.QueryRowContext(ctx, query, ID).Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.ImageURL,
+		&user.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*domain.UserModel, error) {
 	query := `
 		SELECT id, first_name, last_name, email, image_url, created_at FROM users WHERE email = $1

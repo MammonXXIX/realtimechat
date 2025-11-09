@@ -56,6 +56,20 @@ func (s *userService) CreateAccountByClerk(ctx context.Context, data any) error 
 	return s.repository.CreateUser(ctx, user)
 }
 
+func (s *userService) GetUserByID(ctx context.Context, ID string) (*domain.UserModel, error) {
+	user, err := s.repository.GetUserByID(ctx, ID)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, utils.ErrNotFound
+		}
+
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (s *userService) GetUserByEmail(ctx context.Context, email string) (*domain.UserModel, error) {
 	user, err := s.repository.GetUserByEmail(ctx, email)
 

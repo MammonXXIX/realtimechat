@@ -1,11 +1,14 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
-	"log"
+	"net/http"
 	"realtimechat/services/chat-service/internal/domain"
+	"realtimechat/shared/dto"
 	"realtimechat/shared/utils"
 
 	"github.com/google/uuid"
@@ -60,7 +63,7 @@ func (s *chatService) GetChatHistoryByChatRoomID(ctx context.Context, chatRoomID
 	return messages, err
 }
 
-func (s *chatService) GetChatHistoriesByUserID(ctx context.Context, userID string) ([]*domain.ChatHistoryModel, error) {
+func (s *chatService) GetChatHistoriesByUserID(ctx context.Context, userID string) ([]*dto.ChatHistoryWithOtherUserData, error) {
 	chatHistories, err := s.repository.GetChatHistoriesByUserID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -70,7 +73,54 @@ func (s *chatService) GetChatHistoriesByUserID(ctx context.Context, userID strin
 		return nil, err
 	}
 
-	log.Println(chatHistories)
+	userIDs := make([]string, 0, len(chatHistories))
+	for _, c := range chatHistories {
+		userIDs = append(userIDs, c.OtherUserID)
+	}
 
-	return chatHistories, err
+	requestBody, err := json.Marshal(map[string][]string{"users_ids": userIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	request, _ := http.NewRequestWithContext(ctx, "POST", "http://authentication-service:8082/bulk", bytes.NewReader(requestBody))
+	request.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	var resBody []dto.AuthenticationData
+	if err := utils.DecodeJSON(res.Body, &resBody); err != nil {
+		return nil, err
+	}
+
+	userMap := make(map[string]dto.AuthenticationData)
+	for _, u := range resBody {
+		userMap[u.ID] = u
+	}
+
+	result := make([]*dto.ChatHistoryWithOtherUserData, 0, len(chatHistories))
+	for _, c := range chatHistories {
+		chatHistory := &dto.ChatHistoryWithOtherUserData{
+			ChatHistory: dto.ChatHistory{
+				ChatRoomID:  c.ChatRoomID,
+				OtherUserID: c.OtherUserID,
+				Message:     c.Message,
+				CreatedAt:   c.CreatedAt,
+			},
+		}
+
+		if user, ok := userMap[c.OtherUserID]; ok {
+			chatHistory.ChatRoomName = user.FirstName
+			chatHistory.OtherUser = &user
+		}
+
+		result = append(result, chatHistory)
+	}
+
+	return result, err
 }
