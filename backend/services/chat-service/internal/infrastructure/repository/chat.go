@@ -139,11 +139,11 @@ func (r *chatRepository) GetChatHistoryByChatRoomID(ctx context.Context, chatRoo
 
 func (r *chatRepository) GetChatHistoriesByUserID(ctx context.Context, userID string) ([]*domain.ChatHistoryModel, error) {
 	query := `
-		SELECT cr.id AS chat_roo, other.user_id AS other_user_id, m.message, m.created_at
+		SELECT cr.id AS chat_roo, other.user_id AS other_user_id, m.id, m.chat_room_id, m.sender_id, m.message, m.is_read, m.created_at
 		FROM chat_rooms cr
 		JOIN chat_room_members rm ON rm.chat_room_id = cr.id
 		JOIN chat_room_members other ON other.chat_room_id = cr.id AND other.user_id != rm.user_id 
-		JOIN LATERAL (
+		LEFT JOIN LATERAL (
     	SELECT *
     	FROM messages
     	WHERE messages.chat_room_id = cr.id
@@ -165,16 +165,41 @@ func (r *chatRepository) GetChatHistoriesByUserID(ctx context.Context, userID st
 
 	for rows.Next() {
 		c := domain.ChatHistoryModel{}
+		m := domain.MessageModel{}
 
-		err := rows.Scan(
-			&c.ChatRoomID,
-			&c.OtherUserID,
-			&c.Message,
-			&c.CreatedAt,
+		var (
+			messageID   sql.NullString
+			chatRoomID  sql.NullString
+			senderID    sql.NullString
+			messageText sql.NullString
+			isRead      sql.NullBool
+			createdAt   sql.NullTime
 		)
 
-		if err != nil {
+		if err := rows.Scan(
+			&c.ChatRoomID,
+			&c.OtherUserID,
+			&messageID,
+			&chatRoomID,
+			&senderID,
+			&messageText,
+			&isRead,
+			&createdAt,
+		); err != nil {
 			return nil, err
+		}
+
+		if messageID.Valid {
+			m.ID, _ = uuid.Parse(messageID.String)
+			m.ChatRoomID, _ = uuid.Parse(chatRoomID.String)
+			m.SenderID = senderID.String
+			m.Message = messageText.String
+			m.IsRead = isRead.Bool
+			m.CreatedAt = createdAt.Time
+
+			c.LastMessage = &m
+		} else {
+			c.LastMessage = nil
 		}
 
 		chatHistories = append(chatHistories, &c)

@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"realtimechat/services/chat-service/internal/domain"
 	"realtimechat/shared/utils"
@@ -185,6 +186,7 @@ func (h *HttpHandler) GetChatHistoriesByUserID(w http.ResponseWriter, r *http.Re
 
 	chatHistories, err := h.Service.GetChatHistoriesByUserID(r.Context(), userID)
 	if err != nil {
+		log.Println(err)
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
 			Error: &utils.APIError{
 				Code:    "INTERNAL_SERVER_ERROR",

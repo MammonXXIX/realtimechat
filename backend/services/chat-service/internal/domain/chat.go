@@ -31,11 +31,10 @@ type MessageModel struct {
 }
 
 type ChatHistoryModel struct {
-	ChatRoomID   uuid.UUID `json:"chat_room_id"`
-	ChatRoomName string    `json:"chat_room_name"`
-	OtherUserID  string    `json:"other_user_id"`
-	Message      string    `json:"message"`
-	CreatedAt    time.Time `json:"created_at"`
+	ChatRoomID   uuid.UUID     `json:"chat_room_id"`
+	ChatRoomName string        `json:"chat_room_name"`
+	OtherUserID  string        `json:"other_user_id"`
+	LastMessage  *MessageModel `json:"last_message"`
 }
 
 type ChatRepository interface {

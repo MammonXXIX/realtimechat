@@ -105,12 +105,24 @@ func (s *chatService) GetChatHistoriesByUserID(ctx context.Context, userID strin
 
 	result := make([]*dto.ChatHistoryWithOtherUserData, 0, len(chatHistories))
 	for _, c := range chatHistories {
+		var lastMessage dto.Message
+
+		if c.LastMessage != nil {
+			lastMessage = dto.Message{
+				ID:         c.LastMessage.ID,
+				ChatRoomID: c.LastMessage.ChatRoomID,
+				SenderID:   c.LastMessage.SenderID,
+				Message:    c.LastMessage.Message,
+				IsRead:     c.LastMessage.IsRead,
+				CreatedAt:  c.LastMessage.CreatedAt,
+			}
+		}
+
 		chatHistory := &dto.ChatHistoryWithOtherUserData{
 			ChatHistory: dto.ChatHistory{
 				ChatRoomID:  c.ChatRoomID,
 				OtherUserID: c.OtherUserID,
-				Message:     c.Message,
-				CreatedAt:   c.CreatedAt,
+				LastMessage: lastMessage,
 			},
 		}
 
