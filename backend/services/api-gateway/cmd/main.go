@@ -41,15 +41,20 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(clerkhttp.WithHeaderAuthorization())
 
-		r.Post("/contacts", CreateContactByEmailHandler)
-		r.Get("/contacts", GetContactsByUserIDHandler)
+		r.Route("/contacts", func(r chi.Router) {
+			r.Post("/contacts", CreateContactByEmailHandler)
+			r.Get("/contacts", GetContactsByUserIDHandler)
+		})
 
 		r.Route("/chat", func(r chi.Router) {
 			r.Post("/", CreatePrivateChatHandler)
-			r.Post("/{chatRoomID}/message", CreateMessageHandler)
 			r.Get("/{chatRoomID}/history", GetChatHistoryByChatRoomID)
 			r.Get("/history", GetChatHistoriesByUserIDHandler)
 		})
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Get("/websocket", WebSocketProxyHandler)
 	})
 
 	server := &http.Server{
@@ -60,5 +65,4 @@ func main() {
 	if err := server.ListenAndServe(); err != nil {
 		log.Printf("HTTP API Gateway Server Error: %v", err)
 	}
-
 }

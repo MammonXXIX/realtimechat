@@ -5,6 +5,7 @@ import (
 	"net/http"
 	h "realtimechat/services/chat-service/internal/infrastructure/http"
 	"realtimechat/services/chat-service/internal/infrastructure/repository"
+	"realtimechat/services/chat-service/internal/infrastructure/websocket"
 	"realtimechat/services/chat-service/internal/service"
 	"realtimechat/shared/env"
 	"realtimechat/shared/helpers"
@@ -33,6 +34,14 @@ func main() {
 	service := service.NewChatService(repository)
 	httpHandler := h.HttpHandler{Service: service}
 
+	hub := websocket.NewHub()
+	go hub.Run()
+
+	websocketHandler := websocket.HandlerWebsocket{
+		Hub:     hub,
+		Service: service,
+	}
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -45,6 +54,8 @@ func main() {
 	r.Post("/{chatRoomID}/message", httpHandler.CreateMessage)
 	r.Get("/{chatRoomID}/history", httpHandler.GetChatHistoryByChatRoomID)
 	r.Get("/chathistoriesbyuserid", httpHandler.GetChatHistoriesByUserID)
+
+	r.Get("/websocket", websocketHandler.ServeWS)
 
 	server := &http.Server{
 		Addr:    ":8084",

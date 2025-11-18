@@ -74,28 +74,38 @@ func (r *chatRepository) CreateRoomMember(ctx context.Context, chatRoomID uuid.U
 	return nil
 }
 
-func (r *chatRepository) CreateMessage(ctx context.Context, chatRoomID uuid.UUID, senderID, message string) error {
+func (r *chatRepository) CreateMessage(ctx context.Context, chatRoomID uuid.UUID, senderID, message string) (*domain.MessageModel, error) {
 	query := `
 		INSERT INTO messages (chat_room_id, sender_id, message)
 		VALUES ($1, $2, $3)
+		RETURNING id, chat_room_id, sender_id, message, is_read, created_at
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
 	defer cancel()
 
-	_, err := r.db.ExecContext(
+	var reMessage domain.MessageModel
+
+	err := r.db.QueryRowContext(
 		ctx,
 		query,
 		chatRoomID,
 		senderID,
 		message,
+	).Scan(
+		&reMessage.ID,
+		&reMessage.ChatRoomID,
+		&reMessage.SenderID,
+		&reMessage.Message,
+		&reMessage.IsRead,
+		&reMessage.CreatedAt,
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &reMessage, err
 }
 
 func (r *chatRepository) GetChatHistoryByChatRoomID(ctx context.Context, chatRoomID uuid.UUID) ([]*domain.MessageModel, error) {

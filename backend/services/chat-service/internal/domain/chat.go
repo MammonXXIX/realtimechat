@@ -40,14 +40,14 @@ type ChatHistoryModel struct {
 type ChatRepository interface {
 	CreateChatRoom(ctx context.Context) (*ChatRoomModel, error)
 	CreateRoomMember(ctx context.Context, chatRoomID uuid.UUID, userIDs []string) error
-	CreateMessage(ctx context.Context, chatRoomID uuid.UUID, senderID, message string) error
+	CreateMessage(ctx context.Context, chatRoomID uuid.UUID, senderID, message string) (*MessageModel, error)
 	GetChatHistoryByChatRoomID(ctx context.Context, chatRoomID uuid.UUID) ([]*MessageModel, error)
 	GetChatHistoriesByUserID(ctx context.Context, userID string) ([]*ChatHistoryModel, error)
 }
 
 type ChatService interface {
 	CreatePrivateChat(ctx context.Context, userA, userB string) error
-	CreateMessage(ctx context.Context, chatRoomID uuid.UUID, senderID, message string) error
+	CreateMessage(ctx context.Context, chatRoomID uuid.UUID, senderID, message string) (*MessageModel, error)
 	GetChatHistoryByChatRoomID(ctx context.Context, chatRoomID uuid.UUID) ([]*MessageModel, error)
 	GetChatHistoriesByUserID(ctx context.Context, userID string) ([]*dto.ChatHistoryWithOtherUserData, error)
 }

@@ -42,12 +42,13 @@ func (s *chatService) CreatePrivateChat(ctx context.Context, userA, userB string
 	return nil
 }
 
-func (s *chatService) CreateMessage(ctx context.Context, chatRoomID uuid.UUID, senderID, message string) error {
-	if err := s.repository.CreateMessage(ctx, chatRoomID, senderID, message); err != nil {
-		return err
+func (s *chatService) CreateMessage(ctx context.Context, chatRoomID uuid.UUID, senderID, message string) (*domain.MessageModel, error) {
+	reMessage, err := s.repository.CreateMessage(ctx, chatRoomID, senderID, message)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return reMessage, nil
 }
 
 func (s *chatService) GetChatHistoryByChatRoomID(ctx context.Context, chatRoomID uuid.UUID) ([]*domain.MessageModel, error) {

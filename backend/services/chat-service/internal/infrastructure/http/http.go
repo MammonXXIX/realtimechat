@@ -114,7 +114,8 @@ func (h *HttpHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Service.CreateMessage(r.Context(), chatRoomID, userID, req.Message); err != nil {
+	message, err := h.Service.CreateMessage(r.Context(), chatRoomID, userID, req.Message)
+	if err != nil {
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
 			Error: &utils.APIError{
 				Code:    "INTERNAL_SERVER_ERROR",
@@ -124,7 +125,15 @@ func (h *HttpHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	if err := utils.WriteJSON(w, http.StatusCreated, message); err != nil {
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.APIResponse{
+			Error: &utils.APIError{
+				Code:    "INTERNAL_SERVER_ERROR",
+				Message: "Unexpected Server Error",
+			},
+		})
+		return
+	}
 }
 
 func (h *HttpHandler) GetChatHistoryByChatRoomID(w http.ResponseWriter, r *http.Request) {
