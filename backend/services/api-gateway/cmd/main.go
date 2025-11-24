@@ -19,7 +19,7 @@ var (
 
 func main() {
 	log.Printf("Starting API Gateway On Port %v", gatewayHttpAddr)
-	clerk.SetKey("sk_test_2aIqFAIVbY1LnrSrgv0TE3cT5I45TPQ83mlAkEG8a5")
+	clerk.SetKey("sk_test_wVkYzh3uH5Dr8QlmWTlAtOA4vU5Xxz5MdFrnmhwr1R")
 
 	r := chi.NewRouter()
 
@@ -42,8 +42,8 @@ func main() {
 		r.Use(clerkhttp.WithHeaderAuthorization())
 
 		r.Route("/contacts", func(r chi.Router) {
-			r.Post("/contacts", CreateContactByEmailHandler)
-			r.Get("/contacts", GetContactsByUserIDHandler)
+			r.Post("/", CreateContactByEmailHandler)
+			r.Get("/", GetContactsByUserIDHandler)
 		})
 
 		r.Route("/chat", func(r chi.Router) {

@@ -1,58 +1,57 @@
+// app/page.tsx
 "use client";
-import { useEffect, useState } from "react";
-import { useAuth, useSession } from "@clerk/nextjs";
 
-export default function ChatHistoryPage() {
-  const { getToken } = useAuth();
-  const { session } = useSession(); // Tambahkan ini
-  
-  const [messages, setMessages] = useState([]);
-  const [sessionInfo, setSessionInfo] = useState({
-    sessionId: null,
-    sessionToken: null
-  });
+import { useState } from "react";
+import Sidebar from "@/components/Sidebar";
+import ChatHeader from "@/components/ChatHeader";
+import ChatWindow from "@/components/ChatWindow";
+import ChatInput from "@/components/ChatInput";
+import AddContactModal from "@/components/AddContactModal";
+import CreateGroupModal from "@/components/CreateGroupModal";
+import { useChatContext } from "@/context/ChatContext"; // ✅ Changed this!
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      const token = await getToken();
-      
-      // Simpan session info
-      setSessionInfo({
-        sessionId: session?.id || null,
-        sessionToken: token
-      });
-      
-      console.log("Session ID:", session?.id);
-      console.log("Session Token:", token);
-      
-      const res = await fetch(
-        "http://localhost:8081/chat/history",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await res.json();
-      console.log("Response:", data);
-      setMessages(data.data);
-    };
-    
-    if (session) { // Pastikan session sudah ada
-      fetchHistory();
-    }
-  }, [getToken, session]);
+export default function Page() {
+  const {
+    contacts,
+    activeContact,
+    selectContact,
+    addContact,
+    loadingAddContact,
+  } = useChatContext(); // ✅ Changed from useChat() to useChatContext()!
+
+  const [openAddContact, setOpenAddContact] = useState(false);
+  const [openCreateGroup, setOpenCreateGroup] = useState(false);
 
   return (
-    <div>
-      <div style={{ marginBottom: '20px', padding: '10px', background: '#f0f0f0' }}>
-        <h3>Session Info:</h3>
-        <p><strong>Session ID:</strong> {sessionInfo.sessionId}</p>
-        <p><strong>Session Token:</strong> {sessionInfo.sessionToken?.substring(0, 50)}...</p>
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar
+        contacts={contacts}
+        activeContact={activeContact}
+        onSelect={selectContact}
+        onAddContact={() => setOpenAddContact(true)}
+        onCreateGroup={() => setOpenCreateGroup(true)}
+      />
+
+      <div className="flex flex-col flex-1">
+        {activeContact && <ChatHeader contact={activeContact} />}
+        <ChatWindow activeContact={activeContact} />
+
+        {activeContact && <ChatInput />}
       </div>
-      
-      <h3>Messages:</h3>
-      <pre>{JSON.stringify(messages, null, 2)}</pre>
+
+      {/* Popups */}
+      <AddContactModal
+        isOpen={openAddContact}
+        onClose={() => setOpenAddContact(false)}
+        onSubmit={addContact}
+        loadingAddContact={loadingAddContact}
+      />
+
+      <CreateGroupModal
+        isOpen={openCreateGroup}
+        onClose={() => setOpenCreateGroup(false)}
+        onSubmit={(name) => console.log("Create group:", name)}
+      />
     </div>
   );
 }
